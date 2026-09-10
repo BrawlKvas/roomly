@@ -1,0 +1,390 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The API is ready to accept requests.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "status": "ok"
+                  },
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "ok"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Check API availability",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The current server session has been created."
+          }
+        },
+        "summary": "Sign in with an existing Roomly account",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "End only the current server session",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "Read the current read-only profile and session expiry",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/rooms": {
+      "get": {
+        "operationId": "RoomsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The room catalogue."
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "List every room ordered by floor and stable room ID",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/search": {
+      "get": {
+        "operationId": "RoomsController_search",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "Find available rooms free for a future work-time interval",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/{id}/image": {
+      "get": {
+        "operationId": "RoomsController_image",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "The room or its image does not exist."
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "Read the room image when one has been uploaded",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/{id}/schedule": {
+      "get": {
+        "operationId": "RoomsController_schedule",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "Read one room schedule for a calendar day",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/rooms/{id}": {
+      "get": {
+        "operationId": "RoomsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "The room does not exist."
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "Read room details",
+        "tags": [
+          "rooms"
+        ]
+      }
+    },
+    "/api/v1/bookings": {
+      "post": {
+        "operationId": "BookingsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "example": {
+                  "roomId": "room-atlas",
+                  "subject": "Планирование",
+                  "description": "Необязательно",
+                  "participants": 3,
+                  "date": "2026-10-05",
+                  "start": "10:00",
+                  "end": "11:00"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "Create a booking owned by the current user",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/my": {
+      "get": {
+        "operationId": "BookingsController_listMine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "List current user bookings with view and date/status filters",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/upcoming": {
+      "get": {
+        "operationId": "BookingsController_upcoming",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "Read up to five current user active upcoming bookings",
+        "tags": [
+          "bookings"
+        ]
+      }
+    },
+    "/api/v1/bookings/{id}": {
+      "get": {
+        "operationId": "BookingsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "Read a booking; administrators may read any booking",
+        "tags": [
+          "bookings"
+        ]
+      },
+      "patch": {
+        "operationId": "BookingsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "Change a current user future booking using its optimistic version",
+        "tags": [
+          "bookings"
+        ]
+      },
+      "delete": {
+        "operationId": "BookingsController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "roomly_session": []
+          }
+        ],
+        "summary": "Cancel a current user future booking using its optimistic version",
+        "tags": [
+          "bookings"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Roomly API",
+    "description": "HTTP API for the Roomly meeting room booking service",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {}
+  }
+}

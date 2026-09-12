@@ -1,6 +1,6 @@
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 export type DatabaseEnvironment = 'development' | 'test' | 'production';
 
@@ -9,6 +9,20 @@ export interface DatabaseConfig {
   path: string;
   busyTimeoutMs: number;
 }
+
+function findProjectRoot(start: string): string {
+  let directory = start;
+  while (!existsSync(resolve(directory, 'package-lock.json'))) {
+    const parent = dirname(directory);
+    if (parent === directory) {
+      throw new Error('Could not locate the Roomly project root.');
+    }
+    directory = parent;
+  }
+  return directory;
+}
+
+const projectRoot = findProjectRoot(__dirname);
 
 function databaseEnvironment(value = process.env.NODE_ENV): DatabaseEnvironment {
   if (value === 'production' || value === 'test') {
@@ -30,8 +44,10 @@ export function getDatabaseConfig(databasePath?: string): DatabaseConfig {
           tmpdir(),
           `roomly-test-${process.pid}-${process.env.VITEST_POOL_ID ?? 'main'}.sqlite`,
         )
-      : resolve(process.cwd(), 'data/roomly.sqlite');
-  const path = resolve(process.cwd(), configuredPath ?? defaultPath);
+      : resolve(projectRoot, 'data/roomly.sqlite');
+  const path = configuredPath === undefined
+    ? defaultPath
+    : resolve(projectRoot, configuredPath);
 
   return {
     environment,

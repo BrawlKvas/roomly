@@ -35,6 +35,7 @@ export interface Room {
   status: 'available' | 'unavailable';
   equipment: EquipmentCode[];
   imageUrl: string | null;
+  version?: number;
 }
 
 export interface BusyScheduleEntry {

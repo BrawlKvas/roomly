@@ -43,6 +43,8 @@ describe('booking HTTP contract', () => {
     expect(created.body).toMatchObject({ subject: 'Планирование', description: 'Обсудить план', date: officeDate(), start: '10:00', end: '11:00', status: 'scheduled', owner: { email: 'employee@northstar.local' }, version: 1 });
     await agent.post('/api/v1/bookings').send(body(officeDate(), { participants: 99, start: '11:00', end: '12:00' })).expect(400);
     await agent.post('/api/v1/bookings').send(body(officeDate(), { roomId: 'room-cedar', start: '11:00', end: '12:00' })).expect(409);
+    const massAssignment = await agent.post('/api/v1/bookings').send(body(officeDate(), { ownerId: 'user-admin', status: 'cancelled' })).expect(400);
+    expect(massAssignment.body).toMatchObject({ code: 'VALIDATION_ERROR', status: 400 });
   });
 
   it('FR-MY-001/006 lists only owner records and keeps foreign records neutral for an employee', async () => {

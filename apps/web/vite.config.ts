@@ -8,7 +8,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        changeOrigin: true,
+        // Keep the browser host while proxying so the API can verify Origin for
+        // cookie-authenticated mutations in development too.
+        changeOrigin: false,
         target: 'http://127.0.0.1:3000',
       },
     },

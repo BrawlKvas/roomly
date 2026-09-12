@@ -16,3 +16,8 @@ export function RedirectAuthenticated(): React.JSX.Element {
   if (isLoading) return <CircularProgress aria-label="Проверка входа" />;
   return session ? <Navigate replace to="/" /> : <Outlet />;
 }
+
+export function RequireAdmin(): React.JSX.Element {
+  const { session } = useAuth();
+  return session?.user.role === 'admin' ? <Outlet /> : <Navigate replace to="/" />;
+}

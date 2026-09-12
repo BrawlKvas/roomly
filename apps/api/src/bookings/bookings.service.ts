@@ -123,6 +123,34 @@ export class BookingsService {
       .map((row) => this.toSummary(row, now));
   }
 
+  listAll(query: Record<string, unknown>, user: AuthenticatedUser) {
+    if (user.role !== 'admin') throw new ForbiddenException('Недостаточно прав для выполнения операции');
+    this.ensureFields(query, new Set(['roomId', 'ownerId', 'date', 'dateFrom', 'dateTo', 'status']), 'Переданы неподдерживаемые параметры списка');
+    const status = query.status === undefined || query.status === '' ? 'all' : query.status;
+    const date = query.date === undefined || query.date === '' ? undefined : parseCalendarDate(query.date);
+    const dateFrom = date ?? (query.dateFrom === undefined || query.dateFrom === '' ? undefined : parseCalendarDate(query.dateFrom));
+    const dateTo = date ?? (query.dateTo === undefined || query.dateTo === '' ? undefined : parseCalendarDate(query.dateTo));
+    const errors: string[] = [];
+    if (query.date !== undefined && query.date !== '' && !date) errors.push('date: Укажите существующую календарную дату');
+    if (query.dateFrom !== undefined && query.dateFrom !== '' && !dateFrom) errors.push('dateFrom: Укажите существующую календарную дату');
+    if (query.dateTo !== undefined && query.dateTo !== '' && !dateTo) errors.push('dateTo: Укажите существующую календарную дату');
+    if (dateFrom && dateTo && dateFrom > dateTo) errors.push('dateTo: Конец периода не может быть раньше начала');
+    if (typeof status !== 'string' || !['all', 'scheduled', 'completed', 'cancelled'].includes(status)) errors.push('status: Укажите известный статус');
+    if (query.roomId !== undefined && (typeof query.roomId !== 'string' || !this.findRoom(query.roomId))) errors.push('roomId: Комната не найдена');
+    if (query.ownerId !== undefined && (typeof query.ownerId !== 'string' || !this.database.sqlite.prepare('select id from users where id=?').get(query.ownerId))) errors.push('ownerId: Владелец не найден');
+    if (errors.length) throw this.fieldError(...errors);
+    const now = Date.now();
+    return this.selectBookings('where 1=1', []).filter((row) => {
+      const state = this.status(row, now); const startDate = officeDate(row.starts_at);
+      return (query.roomId === undefined || row.room_id === query.roomId) && (query.ownerId === undefined || row.owner_id === query.ownerId) && (!dateFrom || startDate >= dateFrom) && (!dateTo || startDate <= dateTo) && (status === 'all' || state === status);
+    }).sort((a, b) => Date.parse(b.starts_at) - Date.parse(a.starts_at) || a.id.localeCompare(b.id, 'en', { sensitivity: 'variant' })).map((row) => this.toSummary(row, now));
+  }
+
+  listOwners(user: AuthenticatedUser) {
+    if (user.role !== 'admin') throw new ForbiddenException('Недостаточно прав для выполнения операции');
+    return this.database.sqlite.prepare('select id, name, email, role from users order by name collate binary asc, email collate binary asc').all();
+  }
+
   detail(id: string, user: AuthenticatedUser) {
     return this.detailInTransaction(id, user);
   }
@@ -157,17 +185,21 @@ export class BookingsService {
       if (existing.cancelled_at !== null) throw new ConflictException('Бронирование уже отменено');
       const expectedVersion = this.validateVersion(values.version);
       if (existing.version !== expectedVersion) throw new ConflictException('Бронирование изменилось. Загрузите актуальные данные');
-      if (values.reason !== undefined) {
+      const isAdminCancellation = existing.owner_id !== user.id;
+      if (isAdminCancellation) {
+        const reason = normalizeText(values.reason);
+        if (reason === undefined || unicodeLength(reason) < 1 || unicodeLength(reason) > 1000) throw this.fieldError('reason: Укажите причину отмены от 1 до 1000 символов');
+      } else if (values.reason !== undefined) {
         const reason = normalizeText(values.reason);
         if (reason === undefined || reason.length > 0) throw this.fieldError('reason: Причина собственной отмены не поддерживается');
       }
       if (Date.parse(existing.starts_at) <= Date.now()) throw new ConflictException('Можно отменить только будущую запланированную встречу');
       const now = new Date().toISOString();
       const result = this.database.sqlite.prepare(
-        `update bookings set cancelled_at = ?, cancelled_by_user_id = ?, cancellation_type = 'owner', cancellation_reason = null,
+        `update bookings set cancelled_at = ?, cancelled_by_user_id = ?, cancellation_type = ?, cancellation_reason = ?,
           cancellation_actor_name = ?, cancellation_actor_email = ?, cancellation_actor_role = ?, version = version + 1, updated_at = ?
           where id = ? and version = ? and cancelled_at is null`,
-      ).run(now, user.id, user.name, user.email, user.role, now, id, expectedVersion);
+      ).run(now, user.id, isAdminCancellation ? 'admin' : 'owner', isAdminCancellation ? normalizeText(values.reason) : null, user.name, user.email, user.role, now, id, expectedVersion);
       if (result.changes !== 1) throw new ConflictException('Бронирование изменилось. Загрузите актуальные данные');
       return this.detailInTransaction(id, user);
     });
@@ -214,7 +246,6 @@ export class BookingsService {
   private ensureCancellable(existing: BookingRow, user: AuthenticatedUser): void {
     if (existing.owner_id !== user.id) {
       if (user.role === 'employee') throw this.neutralNotFound();
-      throw new ForbiddenException('Администратор не может отменять чужое бронирование на этом этапе');
     }
   }
 

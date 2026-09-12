@@ -2,6 +2,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly code: string = 'UNKNOWN_ERROR',
     readonly requestId?: string,
     readonly fieldErrors: string[] = [],
   ) {
@@ -11,6 +12,7 @@ export class ApiError extends Error {
 }
 
 interface ErrorResponse {
+  code?: string;
   fieldErrors?: string[];
   message?: string;
   requestId?: string;
@@ -34,6 +36,7 @@ export async function apiRequest<T>(
     throw new ApiError(
       error.message ?? 'Запрос не выполнен',
       response.status,
+      error.code,
       error.requestId,
       error.fieldErrors,
     );

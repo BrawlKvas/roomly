@@ -26,6 +26,11 @@ describe('application HTTP contract', () => {
 
     expect(response.body).toEqual({ status: 'ok' });
     expect(response.headers['x-request-id']).toEqual(expect.any(String));
+    expect(response.headers).toMatchObject({
+      'content-security-policy': expect.stringContaining("default-src 'self'"),
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'DENY',
+    });
   });
 
   it('returns the shared error envelope with a request ID', async () => {
@@ -34,7 +39,7 @@ describe('application HTTP contract', () => {
       .expect(404);
 
     expect(response.body).toMatchObject({
-      code: 'HTTP_404',
+      code: 'RESOURCE_NOT_FOUND',
       fieldErrors: ['Cannot GET /api/v1/missing'],
       requestId: expect.any(String),
       status: 404,
@@ -47,5 +52,24 @@ describe('application HTTP contract', () => {
       .expect(200);
 
     expect(response.body.paths).toHaveProperty('/api/v1/health');
+    expect(response.body.paths['/api/v1/bookings'].post.requestBody).toBeDefined();
+    expect(response.body.paths['/api/v1/rooms/{id}/image'].post.requestBody).toBeDefined();
+    expect(response.body.components.schemas.ErrorResponseDto.required).toEqual(
+      expect.arrayContaining(['status', 'code', 'message', 'fieldErrors', 'requestId']),
+    );
+  });
+
+  it('rejects a cross-origin cookie-authenticated mutation with a stable code', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/auth/logout')
+      .set('origin', 'https://untrusted.example')
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      code: 'ORIGIN_MISMATCH',
+      fieldErrors: ['Origin does not match this Roomly application.'],
+      requestId: expect.any(String),
+      status: 403,
+    });
   });
 });

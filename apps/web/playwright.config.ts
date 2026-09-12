@@ -14,10 +14,18 @@ export default defineConfig({
       ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } }
       : {}),
   },
-  webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 4173',
-    cwd: configDirectory,
-    reuseExistingServer: !process.env.CI,
-    url: 'http://127.0.0.1:4173',
-  },
+  webServer: [
+    {
+      command: 'npm run dev --workspace @roomly/api',
+      cwd: `${configDirectory}/../api`,
+      reuseExistingServer: false,
+      url: 'http://127.0.0.1:3000/api/v1/health',
+    },
+    {
+      command: 'npm run dev -- --host 127.0.0.1 --port 4173',
+      cwd: configDirectory,
+      reuseExistingServer: false,
+      url: 'http://127.0.0.1:4173',
+    },
+  ],
 });

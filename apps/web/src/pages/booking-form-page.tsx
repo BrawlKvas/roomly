@@ -1,6 +1,6 @@
 import { Alert, Button, CircularProgress, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -24,6 +24,7 @@ export function BookingFormPage({ edit = false }: { edit?: boolean }): React.JSX
   const rooms = useQuery({ queryKey: ['rooms'], queryFn: () => apiRequest<Room[]>('/api/v1/rooms') });
   const existing = useQuery({ enabled: edit && Boolean(bookingId), queryKey: ['bookings', bookingId], queryFn: () => apiRequest<BookingDetail>(`/api/v1/bookings/${encodeURIComponent(bookingId)}`) });
   const form = useForm<FormValues>({ defaultValues: { roomId: params.get('roomId') ?? '', subject: '', description: '', participants: '', date: params.get('date') ?? officeToday(), start: params.get('start') ?? '', end: params.get('end') ?? '' } });
+  const errorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (edit && existing.data && !form.formState.isDirty) {
@@ -31,6 +32,10 @@ export function BookingFormPage({ edit = false }: { edit?: boolean }): React.JSX
       form.reset({ roomId: booking.room.id, subject: booking.subject, description: booking.description ?? '', participants: String(booking.participants), date: booking.date, start: booking.start, end: booking.end });
     }
   }, [edit, existing.data, form, form.formState.isDirty]);
+
+  useEffect(() => {
+    if (form.formState.errors.root) errorRef.current?.focus();
+  }, [form.formState.errors.root]);
 
   if (rooms.isPending || (edit && existing.isPending)) return <CircularProgress aria-label="Загрузка формы бронирования" />;
   if (rooms.isError || (edit && existing.isError)) return <Alert severity="error">Не удалось загрузить данные бронирования.</Alert>;
@@ -57,7 +62,7 @@ export function BookingFormPage({ edit = false }: { edit?: boolean }): React.JSX
     <div><Typography component="h1" variant="h2">{edit ? 'Изменение бронирования' : 'Новое бронирование'}</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>Время указывается по Москве. Комната и интервал повторно проверяются при сохранении.</Typography></div>
     <Paper component="form" noValidate onSubmit={submit} sx={{ maxWidth: 760, p: 3 }}>
       <Stack spacing={2}>
-        {form.formState.errors.root ? <Alert severity="error">{form.formState.errors.root.message}</Alert> : null}
+        {form.formState.errors.root ? <Alert ref={errorRef} severity="error" tabIndex={-1}>{form.formState.errors.root.message}</Alert> : null}
         <TextField label="Комната" select {...register('roomId', { required: 'Выберите комнату.' })} error={Boolean(form.formState.errors.roomId)} helperText={form.formState.errors.roomId?.message}>
           <MenuItem value="">Выберите комнату</MenuItem>{rooms.data!.filter((room) => room.status === 'available' || room.id === form.getValues('roomId')).map((room) => <MenuItem key={room.id} value={room.id}>{room.name} — до {room.capacity} человек{room.status === 'unavailable' ? ' (недоступна)' : ''}</MenuItem>)}
         </TextField>

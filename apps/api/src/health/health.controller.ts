@@ -1,6 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { HealthResponseDto } from '../openapi/api-contract.dto';
+
 export interface HealthResponse {
   status: 'ok';
 }
@@ -12,12 +14,7 @@ export class HealthController {
   @ApiOperation({ summary: 'Check API availability' })
   @ApiOkResponse({
     description: 'The API is ready to accept requests.',
-    schema: {
-      example: { status: 'ok' },
-      properties: { status: { enum: ['ok'], type: 'string' } },
-      required: ['status'],
-      type: 'object',
-    },
+    type: HealthResponseDto,
   })
   getHealth(): HealthResponse {
     return { status: 'ok' };

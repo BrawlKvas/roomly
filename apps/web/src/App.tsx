@@ -6,7 +6,7 @@ import { roomlyTheme } from './app/theme';
 import { AppErrorBoundary } from './components/app-error-boundary';
 import { AppLayout } from './components/app-layout';
 import { AuthProvider } from './auth/auth-context';
-import { RedirectAuthenticated, RequireAuth } from './auth/auth-routes';
+import { RedirectAuthenticated, RequireAdmin, RequireAuth } from './auth/auth-routes';
 import { HomePage } from './pages/home-page';
 import { LoginPage } from './pages/login-page';
 import { NotFoundPage } from './pages/not-found-page';
@@ -17,6 +17,8 @@ import { SearchPage } from './pages/search-page';
 import { BookingsPage } from './pages/bookings-page';
 import { BookingDetailPage } from './pages/booking-detail-page';
 import { BookingFormPage } from './pages/booking-form-page';
+import { AdminBookingsPage } from './pages/admin-bookings-page';
+import { AdminRoomFormPage, AdminRoomsPage } from './pages/admin-rooms-page';
 
 interface RoomlyAppProps {
   queryClient: QueryClient;
@@ -45,6 +47,12 @@ export function RoomlyApp({ queryClient }: RoomlyAppProps): React.JSX.Element {
                     <Route element={<BookingFormPage />} path="/bookings/new" />
                     <Route element={<BookingDetailPage />} path="/bookings/:bookingId" />
                     <Route element={<BookingFormPage edit />} path="/bookings/:bookingId/edit" />
+                    <Route element={<RequireAdmin />}>
+                      <Route element={<AdminRoomsPage />} path="/admin/rooms" />
+                      <Route element={<AdminRoomFormPage />} path="/admin/rooms/new" />
+                      <Route element={<AdminRoomFormPage />} path="/admin/rooms/:roomId/edit" />
+                      <Route element={<AdminBookingsPage />} path="/admin/bookings" />
+                    </Route>
                     <Route element={<NotFoundPage />} path="*" />
                   </Route>
                 </Route>

@@ -7,7 +7,7 @@ export function RoomSummaryCard({ room, bookingQuery }: { room: Room; bookingQue
   const detailUrl = `/catalog/${encodeURIComponent(room.id)}`;
   const bookingUrl = `/bookings/new?roomId=${encodeURIComponent(room.id)}${bookingQuery ? `&${bookingQuery}` : ''}`;
   return (
-    <Card component="article" variant="outlined">
+    <Card component="article" data-testid={`room-card-${room.id}`} variant="outlined">
       {room.imageUrl ? (
         <Box alt={`Изображение комнаты ${room.name}`} component="img" onError={(event) => { event.currentTarget.style.display = 'none'; }} src={room.imageUrl} sx={{ bgcolor: 'grey.100', display: 'block', height: 150, objectFit: 'cover', width: '100%' }} />
       ) : (

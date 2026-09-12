@@ -2,6 +2,7 @@ import { Alert, Button, Paper, Stack, TextField, Typography } from '@mui/materia
 import type { LoginRequest, SessionResponse } from '@roomly/api-client';
 import { useForm, type FieldErrors, type Resolver } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import { z } from 'zod';
 
 import { ApiError, apiRequest } from '../api/api-client';
@@ -33,6 +34,11 @@ export function LoginPage(): React.JSX.Element {
     resolver: loginResolver,
   });
   const expired = (location.state as { reason?: string } | null)?.reason === 'expired';
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (form.formState.errors.root) errorRef.current?.focus();
+  }, [form.formState.errors.root]);
 
   const submit = form.handleSubmit(async (values) => {
     const email = normalizeLoginEmail(values.email);
@@ -66,7 +72,7 @@ export function LoginPage(): React.JSX.Element {
           <Typography color="text.secondary" sx={{ mt: 1 }}>Используйте учётную запись Northstar Labs.</Typography>
         </div>
         {expired ? <Alert severity="info">Срок входа истёк. Войдите снова.</Alert> : null}
-        {form.formState.errors.root ? <Alert severity="error">{form.formState.errors.root.message}</Alert> : null}
+        {form.formState.errors.root ? <Alert ref={errorRef} severity="error" tabIndex={-1}>{form.formState.errors.root.message}</Alert> : null}
         <TextField autoComplete="email" error={Boolean(form.formState.errors.email)} helperText={form.formState.errors.email?.message} id="email" label="Email" {...form.register('email')} />
         <TextField autoComplete="current-password" error={Boolean(form.formState.errors.password)} helperText={form.formState.errors.password?.message} id="password" label="Пароль" type="password" {...form.register('password')} />
         <Button disabled={form.formState.isSubmitting} type="submit" variant="contained">Войти</Button>

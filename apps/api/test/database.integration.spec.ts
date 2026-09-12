@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { getDatabaseConfig } from '../src/database/database.config';
 
 const projectRoot = resolve(__dirname, '../../..');
 const temporaryDirectories: string[] = [];
@@ -31,6 +32,10 @@ afterEach(() => {
 });
 
 describe('database schema', () => {
+  it('resolves configured relative paths from the repository root', () => {
+    expect(getDatabaseConfig('data/roomly.sqlite').path).toBe(join(projectRoot, 'data', 'roomly.sqlite'));
+  });
+
   it('creates the complete initial schema and applies its migration only once', () => {
     const { database, path } = createMigratedDatabase();
     database.close();

@@ -113,6 +113,12 @@ describe('rooms UI', () => {
     expect(screen.queryByRole('link', { name: 'Забронировать' })).not.toBeInTheDocument();
   });
 
+  it('renders user-supplied room text as text rather than executable HTML', () => {
+    const { container } = render(<MemoryRouter><RoomSummaryCard room={{ id: 'room-safe-text', name: '<script>window.roomlyXss = true</script>', floor: 2, location: 'A', capacity: 4, description: null, status: 'available', equipment: [], imageUrl: null }} /></MemoryRouter>);
+    expect(screen.getByRole('heading', { name: '<script>window.roomlyXss = true</script>' })).toBeInTheDocument();
+    expect(container.querySelector('script')).toBeNull();
+  });
+
   it('shows a foreign schedule entry only as a busy interval', () => {
     render(<Schedule schedule={{ bookingAllowed: true, date: '2026-09-18', entries: [{ startsAt: '12:00', endsAt: '13:00' }] }} />);
     expect(screen.getByText('12:00–13:00')).toBeInTheDocument();

@@ -148,6 +148,15 @@ async function seed() {
         createdAt,
       );
       insertUser.run(
+        'user-employee-2',
+        'Мария Лебедева',
+        'employee2@northstar.local',
+        comparisonKey('employee2@northstar.local'),
+        employeeHash,
+        'employee',
+        createdAt,
+      );
+      insertUser.run(
         'user-admin',
         'Илья Воронов',
         'admin@northstar.local',

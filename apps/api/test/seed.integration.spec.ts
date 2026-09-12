@@ -55,9 +55,10 @@ describe('reference data seed', () => {
     }>;
     database.close();
 
-    expect(users.map((user) => user.role)).toEqual(['admin', 'employee']);
+    expect(users.map((user) => user.role)).toEqual(['admin', 'employee', 'employee']);
     await expect(argon2.verify(users[0]!.password_hash, 'AdminPass!2026')).resolves.toBe(true);
     await expect(argon2.verify(users[1]!.password_hash, 'EmployeePass!2026')).resolves.toBe(true);
+    await expect(argon2.verify(users[2]!.password_hash, 'EmployeePass!2026')).resolves.toBe(true);
     expect(rooms.map((room) => room.floor)).toEqual([2, 3, 5]);
     expect(rooms.map((room) => room.capacity)).toEqual([10, 4, 16]);
     expect(rooms.map((room) => room.status)).toEqual(['available', 'available', 'unavailable']);

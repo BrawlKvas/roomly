@@ -117,31 +117,6 @@ export function AuthProvider({ children }: PropsWithChildren): React.JSX.Element
     return () => window.clearTimeout(timeout);
   }, [endSession, expiresAt]);
 
-  useEffect(() => {
-    const refresh = () => {
-      if (document.visibilityState === 'visible') {
-        void queryClient.fetchQuery({
-          queryFn: async ({ signal }): Promise<SessionQueryValue> => ({
-            generation: generation.current,
-            session: await readSession(signal),
-          }),
-          queryKey: sessionQueryKey,
-        }).then(
-          (result) => {
-            if (!result.session && result.generation === generation.current) endSession('expired');
-          },
-          () => endSession('expired'),
-        );
-      }
-    };
-    window.addEventListener('focus', refresh);
-    document.addEventListener('visibilitychange', refresh);
-    return () => {
-      window.removeEventListener('focus', refresh);
-      document.removeEventListener('visibilitychange', refresh);
-    };
-  }, [endSession, queryClient]);
-
   const value = useMemo<AuthContextValue>(
     () => ({
       endReason,

@@ -1,4 +1,6 @@
 import argon2 from 'argon2';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { openDatabase } from './database.mjs';
 
@@ -8,6 +10,12 @@ const equipmentRows = [
   ['whiteboard', 'Маркерная доска'],
   ['video_conferencing', 'Оборудование для видеоконференций'],
 ];
+
+const roomImages = new Map([
+  ['room-atlas', { data: readFileSync(join(import.meta.dirname, '../assets/room-images/atlas.png')), fileName: 'atlas.png' }],
+  ['room-borey', { data: readFileSync(join(import.meta.dirname, '../assets/room-images/borey.png')), fileName: 'borey.png' }],
+  ['room-cedar', { data: readFileSync(join(import.meta.dirname, '../assets/room-images/cedar.png')), fileName: 'cedar.png' }],
+]);
 
 const roomRows = [
   {
@@ -116,6 +124,11 @@ async function seed() {
     const insertRoomEquipment = sqlite.prepare(
       'INSERT OR IGNORE INTO room_equipment (room_id, equipment_code) VALUES (?, ?)',
     );
+    const addSeedImage = sqlite.prepare(
+      `UPDATE rooms
+       SET image_data = ?, image_mime_type = 'image/png', image_file_name = ?, updated_at = ?
+       WHERE id = ? AND image_data IS NULL`,
+    );
     const insertBooking = sqlite.prepare(`
       INSERT OR IGNORE INTO bookings
         (id, owner_id, room_id, subject, description, participants, starts_at, ends_at, version, created_at, updated_at,
@@ -160,6 +173,9 @@ async function seed() {
           createdAt,
           createdAt,
         );
+        const image = roomImages.get(room.id);
+        if (!image) throw new Error(`Missing seed image for ${room.id}`);
+        addSeedImage.run(image.data, image.fileName, createdAt, room.id);
         for (const equipmentCode of room.equipment) {
           insertRoomEquipment.run(room.id, equipmentCode);
         }

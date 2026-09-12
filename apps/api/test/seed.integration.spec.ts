@@ -38,8 +38,8 @@ describe('reference data seed', () => {
       .prepare('select id, password_hash, role from users order by id')
       .all() as Array<{ id: string; password_hash: string; role: string }>;
     const rooms = database
-      .prepare('select floor, capacity, status from rooms order by id')
-      .all() as Array<{ floor: number; capacity: number; status: string }>;
+      .prepare('select floor, capacity, status, image_data, image_mime_type from rooms order by id')
+      .all() as Array<{ floor: number; capacity: number; status: string; image_data: Buffer | null; image_mime_type: string | null }>;
     const equipmentCount = database
       .prepare('select count(*) as count from equipment')
       .get() as { count: number };
@@ -61,6 +61,7 @@ describe('reference data seed', () => {
     expect(rooms.map((room) => room.floor)).toEqual([2, 3, 5]);
     expect(rooms.map((room) => room.capacity)).toEqual([10, 4, 16]);
     expect(rooms.map((room) => room.status)).toEqual(['available', 'available', 'unavailable']);
+    expect(rooms.every((room) => room.image_data && room.image_mime_type === 'image/png')).toBe(true);
     expect(equipmentCount.count).toBe(4);
     expect(bookings).toHaveLength(4);
     expect(

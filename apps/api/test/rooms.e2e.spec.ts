@@ -84,7 +84,7 @@ describe('rooms HTTP contract', () => {
     return agent;
   }
 
-  it('FR-ROOM-002/003 lists all rooms in normative order and handles missing room/image', async () => {
+  it('FR-ROOM-002/003 lists all rooms in normative order and serves their images', async () => {
     const employee = await login('employee@northstar.local', 'EmployeePass!2026');
     const catalogue = await employee.get('/api/v1/rooms').expect(200);
     expect(catalogue.body.map((room: { id: string }) => room.id)).toEqual(['room-atlas', 'room-borey', 'room-cedar']);
@@ -93,7 +93,9 @@ describe('rooms HTTP contract', () => {
     const image = await employee.get('/api/v1/rooms/room-atlas/image').expect(200);
     expect(image.headers['content-type']).toMatch(/^image\/png/);
     expect(image.body).toEqual(Buffer.from('png-test'));
-    await employee.get('/api/v1/rooms/room-borey/image').expect(404);
+    const boreyImage = await employee.get('/api/v1/rooms/room-borey/image').expect(200);
+    expect(boreyImage.headers['content-type']).toMatch(/^image\/png/);
+    expect(boreyImage.body.length).toBeGreaterThan(0);
   });
 
   it('FR-SEARCH-003/004 applies each filter and their combination without reserving rooms', async () => {

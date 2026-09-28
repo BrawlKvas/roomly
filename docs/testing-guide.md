@@ -62,7 +62,15 @@ Seed создаёт комнаты «Атлас», «Борей» и «Кедр�
 
 ## Сброс и восстановление стенда
 
-Чтобы удалить эксперименты и вернуть известное начальное состояние, выполните:
+Перед запуском тестов на работающем стенде отправьте запрос без авторизации:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/test/reset
+```
+
+Ответ `204 No Content` означает, что исходные данные восстановлены. Запрос очищает и все сессии, поэтому после него войдите снова. Сервер перезапускать не нужно; схема базы остаётся на текущей версии миграций.
+
+Если сервер остановлен и нужно также заново применить миграции, выполните:
 
 ```bash
 npm run db:reset
@@ -71,6 +79,63 @@ npm run db:reset
 Команда удаляет только `data/roomly.sqlite` и его SQLite sidecar-файлы, заново применяет миграции и seed. Она защищена от удаления произвольной или production-базы. Все локально созданные комнаты, бронирования и сессии при этом будут потеряны.
 
 Если запуск был прерван, остановите процессы и снова выполните `npm run db:reset`, затем `npm run dev`. Если проблема связана с зависимостями, повторите `npm ci`; если с browser-проверками — установите Chromium указанной выше командой.
+
+### Пример для Selenium (Java)
+
+В `@BeforeAll` сброс выполняется один раз перед тестами класса. HTTP-запрос отправляется до открытия браузера, поэтому Selenium начинает работу с исходными данными. Пример рассчитан на Java 17+, Selenium Java, JUnit 5 и установленный Chrome; API и SPA должны быть запущены через `npm run dev`.
+
+```java
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class RoomlyCatalogTest {
+    private static WebDriver driver;
+
+    @BeforeAll
+    static void resetAndStartBrowser() throws Exception {
+        HttpRequest reset = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:3000/api/v1/test/reset"))
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<Void> response = HttpClient.newHttpClient()
+                .send(reset, HttpResponse.BodyHandlers.discarding());
+        assertEquals(204, response.statusCode());
+        driver = new ChromeDriver();
+    }
+
+    @AfterAll
+    static void stopBrowser() {
+        if (driver != null) driver.quit();
+    }
+
+    @Test
+    void seedRoomIsVisible() {
+        driver.get("http://localhost:5173/catalog");
+        WebElement room = new WebDriverWait(driver, Duration.ofSeconds(10))
+                .until(ExpectedConditions.visibilityOfElementLocated(
+                        By.cssSelector("[data-testid='room-card-room-atlas']")));
+        assertTrue(room.getText().contains("Атлас"));
+    }
+}
+```
+
+Поместите класс в Java-проект с зависимостями Selenium и JUnit 5. Пример использует постоянный ID комнаты в `data-testid`, согласно [правилам автоматизации](test-automation.md). Если тесты выполняются параллельно на одной БД, их сбросы и изменения данных могут пересекаться; для таких запусков нужны отдельные стенды или последовательное выполнение. Синтаксис WebDriver и ожиданий приведён в [документации Selenium](https://www.selenium.dev/documentation/webdriver/getting_started/first_script/) и [Java API ExpectedConditions](https://www.selenium.dev/selenium/docs/api/java/org/openqa/selenium/support/ui/ExpectedConditions.html).
 
 ## Команды проверки
 

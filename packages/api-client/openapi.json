@@ -23,6 +23,21 @@
         ]
       }
     },
+    "/api/v1/test/reset": {
+      "post": {
+        "operationId": "ResetController_reset",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "The database has been reset."
+          }
+        },
+        "summary": "Restore the reference database state for tests",
+        "tags": [
+          "test"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "AuthController_login",

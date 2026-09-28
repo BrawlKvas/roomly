@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { RoomsModule } from './rooms/rooms.module';
 import { BookingsModule } from './bookings/bookings.module';
+import { ResetController } from './test-support/reset.controller';
 
 @Module({
   imports: [
@@ -42,6 +43,6 @@ import { BookingsModule } from './bookings/bookings.module';
       },
     }),
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, ResetController],
 })
 export class AppModule {}

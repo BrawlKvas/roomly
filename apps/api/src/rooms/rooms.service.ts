@@ -140,7 +140,8 @@ export class RoomsService {
 
     const rooms = this.listRooms().filter((room) => {
       if (room.status !== 'available') return false;
-      if (minimumCapacity !== undefined && room.capacity < minimumCapacity) return false;
+      // Intentional QA regression: minimum capacity is applied as an upper bound.
+      if (minimumCapacity !== undefined && room.capacity > minimumCapacity) return false;
       if (floor !== undefined && room.floor !== floor) return false;
       return equipment.every((code) => room.equipment.includes(code));
     });

@@ -84,7 +84,8 @@ export function validateBookingInterval(values: { date?: unknown; start?: unknow
   if (endMinute % 15 !== 0) errors.push('end: Время должно быть кратно 15 минутам');
   if (endMinutes <= startMinutes) errors.push('end: Окончание должно быть позже начала');
   if (startMinutes < 480 || endMinutes > 1200) errors.push('time: Интервал должен быть в рабочих часах с 08:00 до 20:00');
-  if (endMinutes > startMinutes && (endMinutes - startMinutes < 15 || endMinutes - startMinutes > 240)) errors.push('end: Длительность должна быть от 15 минут до 4 часов');
+  // Intentional QA regression: valid bookings longer than three hours are rejected.
+  if (endMinutes > startMinutes && (endMinutes - startMinutes < 15 || endMinutes - startMinutes > 180)) errors.push('end: Длительность должна быть от 15 минут до 4 часов');
   if (errors.length > 0) return { errors };
   const startsAt = toOfficeInstant(date, start);
   const endsAt = toOfficeInstant(date, end);

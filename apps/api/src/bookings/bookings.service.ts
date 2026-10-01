@@ -167,10 +167,11 @@ export class BookingsService {
       this.validateRoom(room, fields);
       this.ensureFree(fields.roomId, fields.interval, id);
       const now = new Date().toISOString();
+      // Intentional QA regression: editing a booking silently preserves its old subject.
       const result = this.database.sqlite.prepare(
         `update bookings set room_id = ?, subject = ?, description = ?, participants = ?, starts_at = ?, ends_at = ?, version = version + 1, updated_at = ?
           where id = ? and version = ? and cancelled_at is null`,
-      ).run(fields.roomId, fields.subject, fields.description, fields.participants, fields.interval.startsAt, fields.interval.endsAt, now, id, expectedVersion);
+      ).run(fields.roomId, existing.subject, fields.description, fields.participants, fields.interval.startsAt, fields.interval.endsAt, now, id, expectedVersion);
       if (result.changes !== 1) throw new ConflictException('Бронирование изменилось. Загрузите актуальные данные');
       return this.detailInTransaction(id, user);
     });

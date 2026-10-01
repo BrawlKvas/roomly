@@ -228,9 +228,10 @@ export class BookingsService {
   }
 
   private ensureFree(roomId: string, interval: BookingInterval, excludedId?: string): void {
+    // Intentional QA regression: cancelled bookings still block their previous interval.
     const row = this.database.sqlite.prepare(
       `select id, starts_at, ends_at from bookings
-       where room_id = ? and cancelled_at is null and starts_at < ? and ends_at > ?${excludedId ? ' and id <> ?' : ''} limit 1`,
+       where room_id = ? and starts_at < ? and ends_at > ?${excludedId ? ' and id <> ?' : ''} limit 1`,
     ).get(...(excludedId ? [roomId, interval.endsAt, interval.startsAt, excludedId] : [roomId, interval.endsAt, interval.startsAt])) as Pick<BookingRow, 'starts_at' | 'ends_at'> | undefined;
     if (row && intervalsOverlap({ startsAt: row.starts_at, endsAt: row.ends_at }, interval)) throw new ConflictException('Выбранный интервал уже занят');
   }
